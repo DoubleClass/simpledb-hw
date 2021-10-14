@@ -67,19 +67,16 @@ public class HeapPage implements Page {
     */
     private int getNumTuples() {        
         // some code goes here
-        return 0;
-
+        return (int)Math.floor((BufferPool.getPageSize()*8*1.0)/(td.getSize()*8+1));
     }
 
     /**
      * Computes the number of bytes in the header of a page in a HeapFile with each tuple occupying tupleSize bytes
      * @return the number of bytes in the header of a page in a HeapFile with each tuple occupying tupleSize bytes
      */
-    private int getHeaderSize() {        
-        
+    private int getHeaderSize() {
         // some code goes here
-        return 0;
-                 
+        return (int)Math.ceil(getNumTuples()*1.0/8);
     }
     
     /** Return a view of this page before it was modified
@@ -112,7 +109,7 @@ public class HeapPage implements Page {
      */
     public HeapPageId getId() {
     // some code goes here
-    throw new UnsupportedOperationException("implement this");
+        return pid;
     }
 
     /**
@@ -281,8 +278,13 @@ public class HeapPage implements Page {
      * Returns the number of empty slots on this page.
      */
     public int getNumEmptySlots() {
-        // some code goes here
-        return 0;
+        int cnt = 0;
+        for(int i=0; i < numSlots; i++) {
+            if(!isSlotUsed(i)) {
+                cnt++;
+            }
+        }
+        return cnt;
     }
 
     /**
@@ -290,7 +292,12 @@ public class HeapPage implements Page {
      */
     public boolean isSlotUsed(int i) {
         // some code goes here
-        return false;
+        int quot = i/8;
+        int remainder = i%8;
+
+        int bitidx = header[quot];
+        int bit = (bitidx>>remainder) & 1;
+        return bit == 1;
     }
 
     /**
@@ -307,7 +314,13 @@ public class HeapPage implements Page {
      */
     public Iterator<Tuple> iterator() {
         // some code goes here
-        return null;
+        ArrayList<Tuple> filledTuples = new ArrayList<Tuple>();
+        for(int i=0;i<numSlots;++i){
+            if(isSlotUsed(i)){
+                filledTuples.add(tuples[i]);
+            }
+        }
+        return filledTuples.iterator();
     }
 
 }
