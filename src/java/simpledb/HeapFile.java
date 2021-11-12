@@ -1,5 +1,6 @@
 package simpledb;
 
+import javax.xml.crypto.Data;
 import java.io.*;
 import java.util.*;
 
@@ -9,16 +10,17 @@ import java.util.*;
  * size, and the file is simply a collection of those pages. HeapFile works
  * closely with HeapPage. The format of HeapPages is described in the HeapPage
  * constructor.
- * 
+ *
  * @see simpledb.HeapPage#HeapPage
  * @author Sam Madden
  */
 public class HeapFile implements DbFile {
+
     private final File file;
     private final TupleDesc td;
     /**
      * Constructs a heap file backed by the specified file.
-     * 
+     *
      * @param f
      *            the file that stores the on-disk backing store for this heap
      *            file.
@@ -31,7 +33,7 @@ public class HeapFile implements DbFile {
 
     /**
      * Returns the File backing this HeapFile on disk.
-     * 
+     *
      * @return the File backing this HeapFile on disk.
      */
     public File getFile() {
@@ -45,7 +47,7 @@ public class HeapFile implements DbFile {
      * HeapFile has a "unique id," and that you always return the same value for
      * a particular HeapFile. We suggest hashing the absolute file name of the
      * file underlying the heapfile, i.e. f.getAbsoluteFile().hashCode().
-     * 
+     *
      * @return an ID uniquely identifying this HeapFile.
      */
     public int getId() {
@@ -55,7 +57,7 @@ public class HeapFile implements DbFile {
 
     /**
      * Returns the TupleDesc of the table stored in this DbFile.
-     * 
+     *
      * @return TupleDesc of this DbFile.
      */
     public TupleDesc getTupleDesc() {
@@ -101,29 +103,69 @@ public class HeapFile implements DbFile {
     public void writePage(Page page) throws IOException {
         // some code goes here
         // not necessary for lab1
+        int pgNo = page.getId().getPageNumber();
+        if(pgNo > numPages()){
+            throw new IllegalArgumentException();
+        }
+        int pgSize = BufferPool.getPageSize();
+        //write IO
+        RandomAccessFile f = new RandomAccessFile(file,"rw");
+        // set offset
+        f.seek(pgNo*pgSize);
+        // write
+        byte[] data = page.getPageData();
+        f.write(data);
+        f.close();
     }
 
     /**
      * Returns the number of pages in this HeapFile.
      */
     public int numPages() {
-        return (int)Math.floor(file.length()*1.0/BufferPool.getPageSize());
+        // some code goes here
+        int num = (int)Math.floor(file.length()*1.0/BufferPool.getPageSize());
+        return num;
     }
 
     // see DbFile.java for javadocs
     public ArrayList<Page> insertTuple(TransactionId tid, Tuple t)
             throws DbException, IOException, TransactionAbortedException {
         // some code goes here
-        return null;
-        // not necessary for lab1
+        ArrayList<Page> pageList= new ArrayList<Page>();
+        for(int i=0;i<numPages();++i){
+            // took care of getting new page
+            HeapPage p = (HeapPage) Database.getBufferPool().getPage(tid,
+                    new HeapPageId(this.getId(),i),Permissions.READ_WRITE);
+            if(p.getNumEmptySlots() == 0)
+                continue;
+            p.insertTuple(t);
+            pageList.add(p);
+            return pageList;
+        }
+        // no new page
+        BufferedOutputStream bw = new BufferedOutputStream(new FileOutputStream(file,true));
+        byte[] emptyData = HeapPage.createEmptyPageData();
+        bw.write(emptyData);
+        bw.close();
+        // load into cache
+        HeapPage p = (HeapPage) Database.getBufferPool().getPage(tid,
+                new HeapPageId(getId(),numPages()-1),Permissions.READ_WRITE);
+        p.insertTuple(t);
+        pageList.add(p);
+        return pageList;
+
     }
 
     // see DbFile.java for javadocs
     public ArrayList<Page> deleteTuple(TransactionId tid, Tuple t) throws DbException,
             TransactionAbortedException {
         // some code goes here
-        return null;
-        // not necessary for lab1
+        ArrayList<Page> pageList = new ArrayList<Page>();
+        HeapPage p = (HeapPage) Database.getBufferPool().getPage(tid,
+                t.getRecordId().getPageId(),Permissions.READ_WRITE);
+        p.deleteTuple(t);
+        pageList.add(p);
+        return pageList;
     }
 
     // see DbFile.java for javadocs
@@ -204,4 +246,3 @@ public class HeapFile implements DbFile {
     }
 
 }
-

@@ -9,7 +9,6 @@ public class Predicate implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-
     /** Constants used for return codes in Field.compare */
     public enum Op implements Serializable {
         EQUALS, GREATER_THAN, LESS_THAN, LESS_THAN_OR_EQ, GREATER_THAN_OR_EQ, LIKE, NOT_EQUALS;
@@ -17,7 +16,7 @@ public class Predicate implements Serializable {
         /**
          * Interface to access operations by integer value for command-line
          * convenience.
-         * 
+         *
          * @param i
          *            a valid integer Op index
          */
@@ -44,12 +43,14 @@ public class Predicate implements Serializable {
         }
 
     }
+
     private final int field;
     private final Op op;
     private final Field operand;
+
     /**
      * Constructor.
-     * 
+     *
      * @param field
      *            field number of passed in tuples to compare against.
      * @param op
@@ -81,7 +82,7 @@ public class Predicate implements Serializable {
         // some code goes here
         return op;
     }
-    
+
     /**
      * @return the operand
      */
@@ -90,20 +91,20 @@ public class Predicate implements Serializable {
         // some code goes here
         return operand;
     }
-    
+
     /**
      * Compares the field number of t specified in the constructor to the
      * operand field specified in the constructor using the operator specific in
      * the constructor. The comparison can be made through Field's compare
      * method.
-     * 
+     *
      * @param t
      *            The tuple to compare against
      * @return true if the comparison is true, false otherwise.
      */
     public boolean filter(Tuple t) {
         // some code goes here
-        return t.getField(field).compare(op, operand);
+        return t.getField(field).compare(op,operand);
     }
 
     /**
@@ -112,6 +113,7 @@ public class Predicate implements Serializable {
      */
     public String toString() {
         // some code goes here
-        return String.format("f = %d op = %s operand = %s", field,op.toString(),operand.toString());
+        String s = String.format("f = %d op = %s operand = %s", field,op.toString(),operand.toString());
+        return s;
     }
 }
